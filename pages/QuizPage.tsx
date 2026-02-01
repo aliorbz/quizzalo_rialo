@@ -74,30 +74,33 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
           time_remaining_ms: remainingTime * 1000
         };
 
-        // 1. Log the run history
-        await supabase.from('quiz_scores').insert([scoreData]);
+        console.log("Submitting score to Supabase...", scoreData);
 
-        // 2. Fetch current bests to calculate total points correctly
-        const { data: currentBest } = await supabase
+        // 1. Log the run history
+        const { error: scoreError } = await supabase.from('quiz_scores').insert([scoreData]);
+        if (scoreError) console.error("Error inserting quiz score:", scoreError);
+
+        // 2. Update player best
+        const { data: currentBest, error: fetchError } = await supabase
           .from('player_best')
           .select('*')
           .eq('player_name', playerName)
           .maybeSingle();
 
+        if (fetchError) console.error("Error fetching player best:", fetchError);
+
         let updatedBestByTopic = currentBest?.best_by_topic || {};
         const prevBestForTopic = updatedBestByTopic[topicKey] || 0;
 
-        // Update if this run is better OR if the user doesn't exist yet
+        // Update if improved or if first time
         if (finalScore > prevBestForTopic || !currentBest) {
           updatedBestByTopic[topicKey] = Math.max(finalScore, prevBestForTopic);
           
-          // Recalculate total across all topics
           const newTotalPoints = Object.values(updatedBestByTopic).reduce(
             (acc: number, val: any) => acc + (Number(val) || 0), 
             0
           );
 
-          // Standard Supabase upsert using the primary key 'player_name'
           const { error: upsertError } = await supabase.from('player_best').upsert({
             player_name: playerName,
             best_by_topic: updatedBestByTopic,
@@ -105,10 +108,14 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
             updated_at: new Date().toISOString()
           }, { onConflict: 'player_name' });
 
-          if (upsertError) throw upsertError;
+          if (upsertError) {
+            console.error("Error upserting player best:", upsertError);
+          } else {
+            console.log("Leaderboard updated successfully!");
+          }
         }
       } catch (err) { 
-        console.error("Leaderboard persistence failed:", err); 
+        console.error("Critical error during score submission:", err); 
       }
     }
     setIsSubmitting(false);
@@ -121,7 +128,6 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
     
     setUserAnswers(prev => ({ ...prev, [currentIndex]: optionKey }));
     
-    // Track local score for UI
     if (isCorrect) setScore(prev => prev + 1);
 
     setTimeout(() => {
