@@ -1,49 +1,43 @@
-# Quizzalo Setup
+# Quizzalo - Hall of Fame Setup
 
-To enable the leaderboard features, you need a Supabase project.
+To enable global rankings, run the following script in your Supabase SQL Editor.
 
-## 1. Environment Variables
-Create a `.env` file in the root directory:
-```
-VITE_SUPABASE_URL=your_project_url
-VITE_SUPABASE_ANON_KEY=your_anon_key
-```
-
-## 2. SQL Schema
-Run this in your Supabase SQL Editor:
-
+## Supabase SQL Script
 ```sql
--- Table: quiz_scores (Tracks every run)
-create table public.quiz_scores (
-  id uuid default gen_random_uuid() primary key,
-  player_name text not null,
-  topic text not null,
-  score int4 not null,
-  total_questions int4 default 10,
-  time_remaining_ms int4 not null,
-  created_at timestamptz default now()
+-- 1. Create the quiz_scores table (Every attempt log)
+CREATE TABLE public.quiz_scores (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  player_name TEXT NOT NULL,
+  topic TEXT NOT NULL,
+  score INT4 NOT NULL,
+  total_questions INT4 DEFAULT 10,
+  time_remaining_ms INT4 NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Table: player_best (Tracks highest score per topic and total)
-create table public.player_best (
-  player_name text primary key,
-  best_by_topic jsonb not null default '{}'::jsonb,
-  total_points int4 not null default 0,
-  updated_at timestamptz default now()
+-- 2. Create the player_best table (Aggregated Hall of Fame)
+CREATE TABLE public.player_best (
+  player_name TEXT PRIMARY KEY,
+  best_by_topic JSONB NOT NULL DEFAULT '{}'::jsonb,
+  total_points INT4 NOT NULL DEFAULT 0,
+  updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable RLS
-alter table public.quiz_scores enable row level security;
-alter table public.player_best enable row level security;
+-- 3. Enable Row Level Security (RLS)
+ALTER TABLE public.quiz_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.player_best ENABLE ROW LEVEL SECURITY;
 
--- Policies
-create policy "Public Select Scores" on public.quiz_scores for select using (true);
-create policy "Public Insert Scores" on public.quiz_scores for insert with check (true);
-create policy "Public Select Bests" on public.player_best for select using (true);
-create policy "Public Upsert Bests" on public.player_best for upsert with check (true);
+-- 4. Policies for quiz_scores (Public Insert & Select)
+CREATE POLICY "Public Select Scores" ON public.quiz_scores FOR SELECT USING (true);
+CREATE POLICY "Public Insert Scores" ON public.quiz_scores FOR INSERT WITH CHECK (true);
+
+-- 5. Policies for player_best (Enables client-side upsert)
+CREATE POLICY "Public Select Bests" ON public.player_best FOR SELECT USING (true);
+CREATE POLICY "Public Insert Bests" ON public.player_best FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public Update Bests" ON public.player_best FOR UPDATE USING (true) WITH CHECK (true);
 ```
 
-## 3. Scoring Logic
-- **Topic Cap**: Each topic allows a maximum of 10 points.
-- **Global Cap**: With 3 active topics (Introducing Rialo I, II, III), the maximum achievable Hall of Fame score is **30**.
-- **Tie-breakers**: Ranked by total points (DESC), then by earliest achievement time (`updated_at` ASC). Users who reached the top first stay ahead on ties.
+## Setup Verification
+- **Environment Variables**: Use `.env` with `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+- **Primary Key**: The leaderboard identifies players by their display name.
+- **Tie-breakers**: If two players have 30/30 points, the one who achieved it first ranks higher.

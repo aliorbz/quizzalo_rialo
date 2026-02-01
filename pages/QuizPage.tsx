@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { INTRODUCING_RIALO_1, INTRODUCING_RIALO_2, INTRODUCING_RIALO_3 } from '../questions';
 import { Question, QuizState, QuizScore } from '../types';
 import Button from '../components/Button';
-import { Timer as TimerIcon, Trophy, X, RotateCcw } from 'lucide-react';
+import { Timer as TimerIcon, Trophy, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../supabaseClient';
 
 const QUIZ_DURATION = 60;
@@ -65,37 +65,51 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
 
     if (isSupabaseConfigured && supabase) {
       try {
+        const topicKey = topicId || 'unknown';
         const scoreData: QuizScore = {
           player_name: playerName,
-          topic: topicId || 'unknown',
+          topic: topicKey,
           score: finalScore,
           total_questions: QUESTIONS_PER_RUN,
           time_remaining_ms: remainingTime * 1000
         };
 
+        // 1. Log the run history
         await supabase.from('quiz_scores').insert([scoreData]);
 
-        const { data: bestData } = await supabase
+        // 2. Fetch current bests to calculate total points correctly
+        const { data: currentBest } = await supabase
           .from('player_best')
           .select('*')
           .eq('player_name', playerName)
-          .single();
+          .maybeSingle();
 
-        let updatedBestByTopic = bestData?.best_by_topic || {};
-        const prevBest = updatedBestByTopic[scoreData.topic] || 0;
-        
-        if (finalScore > prevBest) {
-          updatedBestByTopic[scoreData.topic] = finalScore;
-          const newTotalPoints = Object.values(updatedBestByTopic).reduce((a: any, b: any) => a + Number(b), 0);
+        let updatedBestByTopic = currentBest?.best_by_topic || {};
+        const prevBestForTopic = updatedBestByTopic[topicKey] || 0;
 
-          await supabase.from('player_best').upsert({
+        // Update if this run is better OR if the user doesn't exist yet
+        if (finalScore > prevBestForTopic || !currentBest) {
+          updatedBestByTopic[topicKey] = Math.max(finalScore, prevBestForTopic);
+          
+          // Recalculate total across all topics
+          const newTotalPoints = Object.values(updatedBestByTopic).reduce(
+            (acc: number, val: any) => acc + (Number(val) || 0), 
+            0
+          );
+
+          // Standard Supabase upsert using the primary key 'player_name'
+          const { error: upsertError } = await supabase.from('player_best').upsert({
             player_name: playerName,
             best_by_topic: updatedBestByTopic,
             total_points: newTotalPoints,
             updated_at: new Date().toISOString()
-          });
+          }, { onConflict: 'player_name' });
+
+          if (upsertError) throw upsertError;
         }
-      } catch (err) { console.error("Leaderboard failed", err); }
+      } catch (err) { 
+        console.error("Leaderboard persistence failed:", err); 
+      }
     }
     setIsSubmitting(false);
   };
@@ -104,11 +118,16 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
     if (state !== QuizState.ACTIVE || userAnswers[currentIndex]) return;
     const currentQuestion = questions[currentIndex];
     const isCorrect = optionKey === currentQuestion.answer;
+    
     setUserAnswers(prev => ({ ...prev, [currentIndex]: optionKey }));
+    
+    // Track local score for UI
     if (isCorrect) setScore(prev => prev + 1);
+
     setTimeout(() => {
-      if (currentIndex < QUESTIONS_PER_RUN - 1) setCurrentIndex(prev => prev + 1);
-      else {
+      if (currentIndex < QUESTIONS_PER_RUN - 1) {
+        setCurrentIndex(prev => prev + 1);
+      } else {
         const finalScore = isCorrect ? score + 1 : score;
         setState(QuizState.FINISHED);
         submitFinalScore(finalScore, timeLeft);
