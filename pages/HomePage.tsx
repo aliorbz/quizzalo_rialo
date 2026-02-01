@@ -10,7 +10,7 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ onStartQuiz }) => {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-16 sm:py-20 overflow-hidden relative">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-28 pb-16 sm:py-20 overflow-hidden relative">
       <header className="absolute top-0 left-0 right-0 p-4 sm:p-6 md:p-10 flex items-center justify-between z-20">
         <div className="flex items-center gap-2 sm:gap-3">
           <img 
@@ -18,7 +18,6 @@ const HomePage: React.FC<HomePageProps> = ({ onStartQuiz }) => {
             alt="Rialo Logo" 
             className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-2xl shadow-lg border-2 border-white/50"
           />
-          <span className="font-serif text-lg sm:text-2xl font-bold">Quizzalo</span>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <Link to="/topics">
