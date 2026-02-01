@@ -21,8 +21,6 @@ const App: React.FC = () => {
     localStorage.setItem('quizzalo_player_name', trimmed);
     setPlayerName(trimmed);
     setIsNameModalOpen(false);
-    
-    // If user clicked a specific topic before signing in, topic page handles navigation
   };
 
   const startQuizFlow = (topicId?: string) => {
@@ -32,9 +30,10 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="relative min-h-screen overflow-hidden text-[#0B0B0B]">
+      <div className="relative min-h-screen text-[#0B0B0B] bg-[#E9E1D6] flex flex-col">
         <BlobBackground />
-        <main className="relative z-10">
+        
+        <main className="relative z-10 flex-grow pb-24 sm:pb-32">
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={
@@ -65,13 +64,13 @@ const App: React.FC = () => {
           )}
         </AnimatePresence>
 
-        <footer className="fixed bottom-8 left-0 right-0 z-20 flex items-center justify-center gap-3 pointer-events-none">
+        <footer className="fixed bottom-0 left-0 right-0 z-30 pb-6 pt-10 flex items-center justify-center gap-3 pointer-events-none bg-gradient-to-t from-[#E9E1D6] via-[#E9E1D6]/90 to-transparent">
           <img 
             src="https://pbs.twimg.com/profile_images/1801955577763094529/5qtIvl5X_400x400.jpg" 
             alt="" 
-            className="w-6 h-6 rounded-full border border-[#0B0B0B]/10"
+            className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-[#0B0B0B]/10"
           />
-          <span className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-60">
+          <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.2em] font-bold opacity-60">
             Build by{' '}
             <motion.a 
               href="https://x.com/aliorbz" 

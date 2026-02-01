@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,48 +75,33 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
           time_remaining_ms: remainingTime * 1000
         };
 
-        console.log("Submitting score to Supabase...", scoreData);
+        await supabase.from('quiz_scores').insert([scoreData]);
 
-        // 1. Log the run history
-        const { error: scoreError } = await supabase.from('quiz_scores').insert([scoreData]);
-        if (scoreError) console.error("Error inserting quiz score:", scoreError);
-
-        // 2. Update player best
-        const { data: currentBest, error: fetchError } = await supabase
+        const { data: currentBest } = await supabase
           .from('player_best')
           .select('*')
           .eq('player_name', playerName)
           .maybeSingle();
 
-        if (fetchError) console.error("Error fetching player best:", fetchError);
-
         let updatedBestByTopic = currentBest?.best_by_topic || {};
         const prevBestForTopic = updatedBestByTopic[topicKey] || 0;
 
-        // Update if improved or if first time
         if (finalScore > prevBestForTopic || !currentBest) {
           updatedBestByTopic[topicKey] = Math.max(finalScore, prevBestForTopic);
-          
           const newTotalPoints = Object.values(updatedBestByTopic).reduce(
             (acc: number, val: any) => acc + (Number(val) || 0), 
             0
           );
 
-          const { error: upsertError } = await supabase.from('player_best').upsert({
+          await supabase.from('player_best').upsert({
             player_name: playerName,
             best_by_topic: updatedBestByTopic,
             total_points: newTotalPoints,
             updated_at: new Date().toISOString()
           }, { onConflict: 'player_name' });
-
-          if (upsertError) {
-            console.error("Error upserting player best:", upsertError);
-          } else {
-            console.log("Leaderboard updated successfully!");
-          }
         }
       } catch (err) { 
-        console.error("Critical error during score submission:", err); 
+        console.error("Score submission error:", err); 
       }
     }
     setIsSubmitting(false);
@@ -127,7 +113,6 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
     const isCorrect = optionKey === currentQuestion.answer;
     
     setUserAnswers(prev => ({ ...prev, [currentIndex]: optionKey }));
-    
     if (isCorrect) setScore(prev => prev + 1);
 
     setTimeout(() => {
@@ -151,13 +136,11 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state, currentIndex, userAnswers, score]);
 
-  const currentQuestion = questions[currentIndex];
-
   if (state === QuizState.COUNTDOWN) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#E9E1D6]">
         <AnimatePresence mode="wait">
-          <motion.div key={countdown} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.5 }} className="text-9xl font-serif font-black">
+          <motion.div key={countdown} initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.5 }} className="text-7xl sm:text-9xl font-serif font-black">
             {countdown > 0 ? countdown : "Go!"}
           </motion.div>
         </AnimatePresence>
@@ -167,13 +150,13 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
 
   if (state === QuizState.FAILED) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-12 rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center">
-          <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><X className="w-10 h-10" /></div>
-          <h2 className="text-4xl font-serif font-black mb-4">Time’s Up!</h2>
-          <p className="text-[#8C857C] mb-8">The Rialo engine waits for no one. Try to pick up the pace!</p>
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-[#E9E1D6]">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-8 sm:p-12 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl max-w-lg w-full text-center">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><X className="w-8 h-8 sm:w-10 sm:h-10" /></div>
+          <h2 className="text-3xl sm:text-4xl font-serif font-black mb-4">Time’s Up!</h2>
+          <p className="text-sm sm:text-base text-[#8C857C] mb-8">The Rialo engine waits for no one. Try to pick up the pace!</p>
           <div className="flex flex-col gap-3">
-            <Button onClick={initQuiz} className="w-full">Try Again</Button>
+            <Button onClick={initQuiz} className="w-full py-3 sm:py-4">Try Again</Button>
             <Button variant="ghost" onClick={() => navigate('/topics')} className="w-full">Change Topic</Button>
           </div>
         </motion.div>
@@ -183,46 +166,49 @@ const QuizPage: React.FC<{ playerName: string }> = ({ playerName }) => {
 
   if (state === QuizState.FINISHED) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-10 md:p-12 rounded-[2.5rem] shadow-2xl max-w-2xl w-full text-center">
-          <div className="w-20 h-20 bg-[#0B0B0B] text-[#E9E1D6] rounded-full flex items-center justify-center mx-auto mb-6"><Trophy className="w-10 h-10" /></div>
-          <h2 className="text-5xl font-serif font-black mb-2">Sprint Complete</h2>
-          <p className="text-[#8C857C] text-lg mb-10">Your score: <span className="text-[#0B0B0B] font-bold">{score} / {QUESTIONS_PER_RUN}</span></p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={initQuiz} className="flex-1" variant="outline">Try Again</Button>
-            <Button onClick={() => navigate('/leaderboard')} className="flex-1">Leaderboard</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 py-16 sm:py-20 bg-[#E9E1D6]">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white p-6 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl max-w-xl w-full text-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-[#0B0B0B] text-[#E9E1D6] rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6"><Trophy className="w-6 h-6 sm:w-8 sm:h-8" /></div>
+          <h2 className="text-3xl sm:text-4xl font-serif font-black mb-1">Sprint Complete</h2>
+          <p className="text-base sm:text-lg text-[#8C857C] mb-8 sm:mb-12">Your score: <span className="text-[#0B0B0B] font-bold">{score} / {QUESTIONS_PER_RUN}</span></p>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={initQuiz} className="flex-1 py-3 sm:py-4" variant="outline">Try Again</Button>
+            <Button onClick={() => navigate('/leaderboard')} className="flex-1 py-3 sm:py-4">Leaderboard</Button>
           </div>
         </motion.div>
       </div>
     );
   }
 
+  const currentQuestion = questions[currentIndex];
+
   return (
-    <div className="min-h-screen px-6 py-20 flex flex-col items-center max-w-4xl mx-auto">
-      <div className="w-full flex items-center justify-between mb-16">
+    <div className="min-h-screen px-4 sm:px-6 py-12 sm:py-20 flex flex-col items-center max-w-4xl mx-auto bg-[#E9E1D6]">
+      <div className="w-full flex items-center justify-between mb-8 sm:mb-16">
         <div className="flex flex-col">
-          <span className="text-xs font-bold uppercase tracking-widest text-[#8C857C] mb-1">Status</span>
-          <span className="text-2xl font-bold">{currentIndex + 1} / {QUESTIONS_PER_RUN}</span>
+          <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8C857C] mb-0.5 sm:mb-1">Progress</span>
+          <span className="text-xl sm:text-2xl font-bold">{currentIndex + 1} / {QUESTIONS_PER_RUN}</span>
         </div>
         <div className={`flex flex-col items-end transition-colors ${timeLeft < 10 ? 'text-red-500' : ''}`}>
-           <span className="text-xs font-bold uppercase tracking-widest text-[#8C857C] mb-1">Timer</span>
-           <div className="flex items-center gap-2">
-             <motion.div animate={timeLeft < 10 ? { scale: [1, 1.1, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }}><TimerIcon className="w-5 h-5" /></motion.div>
-             <span className="text-3xl font-mono font-black">{timeLeft}s</span>
+           <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8C857C] mb-0.5 sm:mb-1">Timer</span>
+           <div className="flex items-center gap-1.5 sm:gap-2">
+             <motion.div animate={timeLeft < 10 ? { scale: [1, 1.1, 1] } : {}} transition={{ repeat: Infinity, duration: 1 }}><TimerIcon className="w-4 h-4 sm:w-5 sm:h-5" /></motion.div>
+             <span className="text-2xl sm:text-3xl font-mono font-black">{timeLeft}s</span>
            </div>
         </div>
       </div>
-      <div className="w-full h-2 bg-[#0B0B0B]/5 rounded-full mb-20 overflow-hidden">
+      <div className="w-full h-1.5 sm:h-2 bg-[#0B0B0B]/5 rounded-full mb-10 sm:mb-20 overflow-hidden">
         <motion.div className="h-full bg-[#0B0B0B]" initial={{ width: 0 }} animate={{ width: `${((currentIndex + 1) / QUESTIONS_PER_RUN) * 100}%` }} />
       </div>
       <AnimatePresence mode="wait">
         <motion.div key={currentIndex} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="w-full">
-          <h2 className="text-3xl md:text-5xl font-serif font-black mb-14 leading-[1.1] tracking-tight">{currentQuestion?.prompt}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <h2 className="text-xl sm:text-3xl md:text-5xl font-serif font-black mb-10 sm:mb-14 leading-[1.2] sm:leading-[1.1] tracking-tight">{currentQuestion?.prompt}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
             {(['A', 'B', 'C', 'D'] as const).map((key) => (
-              <button key={key} disabled={!!userAnswers[currentIndex]} onClick={() => handleAnswerSelect(key)} className={`flex items-start gap-4 p-7 rounded-[2rem] text-left transition-all duration-300 ${userAnswers[currentIndex] === key ? 'bg-[#0B0B0B] text-white' : 'bg-white hover:bg-[#F9F6F2]'}`}>
-                <span className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${userAnswers[currentIndex] === key ? 'bg-white/20' : 'bg-[#E9E1D6]'}`}>{key}</span>
-                <span className="font-semibold pt-2 text-xl leading-snug">{currentQuestion?.options[key]}</span>
+              <button key={key} disabled={!!userAnswers[currentIndex]} onClick={() => handleAnswerSelect(key)} className={`flex items-start gap-3 sm:gap-4 p-4 sm:p-7 rounded-[1.2rem] sm:rounded-[2rem] text-left transition-all duration-300 ${userAnswers[currentIndex] === key ? 'bg-[#0B0B0B] text-white shadow-xl scale-[0.98]' : 'bg-white hover:bg-[#F9F6F2] shadow-sm'} active:scale-[0.98] group`}>
+                <span className={`flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-base sm:text-lg transition-colors ${userAnswers[currentIndex] === key ? 'bg-white/20' : 'bg-[#E9E1D6] group-hover:bg-[#DBCFBD]'}`}>{key}</span>
+                <span className="font-semibold pt-1 sm:pt-2 text-base sm:text-xl leading-snug">{currentQuestion?.options[key]}</span>
               </button>
             ))}
           </div>

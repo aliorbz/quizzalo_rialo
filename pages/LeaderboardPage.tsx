@@ -63,13 +63,13 @@ const LeaderboardPage: React.FC = () => {
 
   if (!isSupabaseConfigured) {
     return (
-      <div className="min-h-screen px-6 py-20 flex flex-col items-center justify-center">
-        <div className="bg-white p-10 rounded-[2.5rem] shadow-xl text-center max-w-lg">
-          <AlertCircle className="w-12 h-12 text-[#8C857C] mx-auto mb-6 opacity-30" />
-          <h2 className="text-3xl font-serif mb-4">Leaderboard Unavailable</h2>
-          <p className="text-[#8C857C] mb-8">Supabase configuration keys are missing. Connect your Supabase instance to enable global rankings.</p>
+      <div className="min-h-screen px-4 sm:px-6 py-20 flex flex-col items-center justify-center bg-[#E9E1D6]">
+        <div className="bg-white p-8 sm:p-10 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl text-center max-w-lg w-full">
+          <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-[#8C857C] mx-auto mb-6 opacity-30" />
+          <h2 className="text-2xl sm:text-3xl font-serif mb-4">Leaderboard Unavailable</h2>
+          <p className="text-sm sm:text-base text-[#8C857C] mb-8">Supabase configuration keys are missing. Connect your Supabase instance to enable global rankings.</p>
           <Link to="/">
-            <Button>Back to Home</Button>
+            <Button className="w-full sm:w-auto">Back to Home</Button>
           </Link>
         </div>
       </div>
@@ -77,18 +77,18 @@ const LeaderboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-6 py-20 flex flex-col items-center relative">
+    <div className="min-h-screen px-4 sm:px-6 py-24 sm:py-32 flex flex-col items-center relative bg-[#E9E1D6]">
       {/* Top Navigation Header */}
-      <header className="absolute top-0 left-0 right-0 p-6 md:p-10 flex items-center justify-end z-20">
-        <div className="flex items-center gap-4">
+      <header className="absolute top-0 left-0 right-0 p-4 sm:p-6 md:p-10 flex items-center justify-end z-20">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Link to="/">
-            <Button variant="outline" className="px-6 py-2.5 text-sm h-11">
-              <Home className="w-4 h-4" /> Home
+            <Button variant="outline" className="px-3 sm:px-6 py-2 sm:py-2.5 text-[10px] sm:text-sm h-9 sm:h-11">
+              <Home className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Home</span>
             </Button>
           </Link>
           <Link to="/topics">
-            <Button variant="outline" className="px-6 py-2.5 text-sm h-11">
-              <LayoutGrid className="w-4 h-4" /> Topics
+            <Button variant="outline" className="px-3 sm:px-6 py-2 sm:py-2.5 text-[10px] sm:text-sm h-9 sm:h-11">
+              <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> <span>Topics</span>
             </Button>
           </Link>
         </div>
@@ -97,78 +97,84 @@ const LeaderboardPage: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-4xl text-center mb-16 pt-12 md:pt-16"
+        className="w-full max-w-4xl text-center mb-10 sm:mb-16"
       >
-        <h1 className="text-6xl md:text-7xl font-serif font-black mb-4">Hall of Fame</h1>
-        <p className="text-[#8C857C] text-lg">The world's best Rialo fundamentalists.</p>
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-serif font-black mb-3 sm:mb-4 tracking-tight">Hall of Fame</h1>
+        <p className="text-[#8C857C] text-base sm:text-lg">The world's best Rialo fundamentalists.</p>
       </motion.div>
 
-      <div className="w-full max-w-4xl flex flex-col gap-6">
-        <div className="bg-white rounded-[2.5rem] shadow-xl overflow-hidden">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-[#0B0B0B]/5">
-                <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-[#8C857C]">Rank</th>
-                <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-[#8C857C]">Name</th>
-                <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-[#8C857C] text-right">Points / {MAX_TOTAL_POINTS}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={3} className="px-8 py-6 border-b border-[#0B0B0B]/5 h-20">
-                      <div className="w-full h-4 bg-[#0B0B0B]/5 rounded-full" />
-                    </td>
-                  </tr>
-                ))
-              ) : topPlayers.length > 0 ? (
-                topPlayers.map((player, i) => (
-                  <tr 
-                    key={player.player_name} 
-                    className={`group transition-colors ${player.player_name === playerName ? 'bg-[#0B0B0B]/5' : 'hover:bg-[#0B0B0B]/5'}`}
-                  >
-                    <td className="px-8 py-6 border-b border-[#0B0B0B]/5">
-                      <div className="flex items-center gap-3">
-                        {i === 0 && <Medal className="w-5 h-5 text-yellow-500" />}
-                        {i === 1 && <Medal className="w-5 h-5 text-slate-400" />}
-                        {i === 2 && <Medal className="w-5 h-5 text-amber-700" />}
-                        {i > 2 && <span className="font-mono text-[#8C857C]">#{i + 1}</span>}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 border-b border-[#0B0B0B]/5 font-medium">
-                      {player.player_name}
-                      {player.player_name === playerName && <span className="ml-2 text-[10px] bg-[#0B0B0B] text-white px-2 py-0.5 rounded-full uppercase tracking-tighter">You</span>}
-                    </td>
-                    <td className="px-8 py-6 border-b border-[#0B0B0B]/5 text-right font-mono font-bold text-xl">
-                      {player.total_points}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={3} className="px-8 py-20 text-center text-[#8C857C]">
-                    No scores recorded yet. Be the first!
-                  </td>
+      <div className="w-full max-w-4xl flex flex-col gap-4 sm:gap-6">
+        <div className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl overflow-hidden border border-[#0B0B0B]/5">
+          <div className="w-full">
+            <table className="w-full text-left border-collapse table-fixed">
+              <thead>
+                <tr className="bg-[#0B0B0B]/5">
+                  <th className="w-14 sm:w-24 px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8C857C]">#</th>
+                  <th className="px-2 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8C857C]">Player</th>
+                  <th className="w-20 sm:w-40 px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#8C857C] text-right">Points</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {loading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td colSpan={3} className="px-4 sm:px-8 py-4 sm:py-6 border-b border-[#0B0B0B]/5 h-16 sm:h-20">
+                        <div className="w-full h-3 sm:h-4 bg-[#0B0B0B]/5 rounded-full" />
+                      </td>
+                    </tr>
+                  ))
+                ) : topPlayers.length > 0 ? (
+                  topPlayers.map((player, i) => (
+                    <tr 
+                      key={player.player_name} 
+                      className={`group transition-colors ${player.player_name === playerName ? 'bg-[#0B0B0B]/5' : 'hover:bg-[#0B0B0B]/5'}`}
+                    >
+                      <td className="px-4 sm:px-8 py-4 sm:py-6 border-b border-[#0B0B0B]/5">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          {i === 0 && <Medal className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 flex-shrink-0" />}
+                          {i === 1 && <Medal className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 flex-shrink-0" />}
+                          {i === 2 && <Medal className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 flex-shrink-0" />}
+                          {i > 2 && <span className="font-mono text-xs sm:text-sm text-[#8C857C]">#{i + 1}</span>}
+                        </div>
+                      </td>
+                      <td className="px-2 sm:px-8 py-4 sm:py-6 border-b border-[#0B0B0B]/5 font-medium text-sm sm:text-base overflow-hidden">
+                        <div className="flex items-center gap-1.5 sm:gap-2 max-w-full">
+                          <span className="truncate">{player.player_name}</span>
+                          {player.player_name === playerName && (
+                            <span className="flex-shrink-0 text-[7px] sm:text-[10px] bg-[#0B0B0B] text-white px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-tighter">You</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 sm:px-8 py-4 sm:py-6 border-b border-[#0B0B0B]/5 text-right font-mono font-bold text-lg sm:text-xl">
+                        {player.total_points}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-4 sm:px-8 py-16 sm:py-20 text-center text-[#8C857C] text-sm sm:text-base">
+                      No scores recorded yet. Be the first!
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {playerName && myBest && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#0B0B0B] text-[#E9E1D6] p-8 rounded-[2.5rem] flex items-center justify-between shadow-2xl"
+            className="bg-[#0B0B0B] text-[#E9E1D6] p-6 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] flex flex-row items-center justify-between shadow-2xl"
           >
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-1">Your Personal Best</p>
-              <h4 className="text-2xl font-serif">Global Rank #{myRank || '-'}</h4>
+            <div className="text-left">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50 mb-1">Your Best</p>
+              <h4 className="text-xl sm:text-2xl font-serif">Rank #{myRank || '-'}</h4>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-1">Total Score</p>
-              <p className="text-4xl font-mono font-bold">{myBest.total_points} <span className="text-sm opacity-40">/ {MAX_TOTAL_POINTS}</span></p>
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50 mb-1">Total Score</p>
+              <p className="text-3xl sm:text-4xl font-mono font-bold leading-none">{myBest.total_points} <span className="text-[10px] sm:text-sm opacity-40">/ {MAX_TOTAL_POINTS}</span></p>
             </div>
           </motion.div>
         )}
