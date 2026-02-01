@@ -77,11 +77,27 @@ const LeaderboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-6 py-20 flex flex-col items-center">
+    <div className="min-h-screen px-6 py-20 flex flex-col items-center relative">
+      {/* Top Navigation Header */}
+      <header className="absolute top-0 left-0 right-0 p-6 md:p-10 flex items-center justify-end z-20">
+        <div className="flex items-center gap-4">
+          <Link to="/">
+            <Button variant="outline" className="px-6 py-2.5 text-sm h-11">
+              <Home className="w-4 h-4" /> Home
+            </Button>
+          </Link>
+          <Link to="/topics">
+            <Button variant="outline" className="px-6 py-2.5 text-sm h-11">
+              <LayoutGrid className="w-4 h-4" /> Topics
+            </Button>
+          </Link>
+        </div>
+      </header>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-4xl text-center mb-16"
+        className="w-full max-w-4xl text-center mb-16 pt-12 md:pt-16"
       >
         <h1 className="text-6xl md:text-7xl font-serif font-black mb-4">Hall of Fame</h1>
         <p className="text-[#8C857C] text-lg">The world's best Rialo fundamentalists.</p>
@@ -156,19 +172,6 @@ const LeaderboardPage: React.FC = () => {
             </div>
           </motion.div>
         )}
-
-        <div className="flex justify-center mt-12 gap-4">
-           <Link to="/">
-             <Button variant="outline" className="gap-2">
-               <Home className="w-4 h-4" /> Home
-             </Button>
-           </Link>
-           <Link to="/topics">
-             <Button className="gap-2">
-               <LayoutGrid className="w-4 h-4" /> Topics
-             </Button>
-           </Link>
-        </div>
       </div>
     </div>
   );
