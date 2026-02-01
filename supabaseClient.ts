@@ -18,7 +18,7 @@ const getEnvVar = (name: string): string | undefined => {
 };
 
 let supabaseUrl = getEnvVar('VITE_SUPABASE_URL') || "https://zhqxdyrnktbdeycdokdr.supabase.co";
-const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpocXhkeXJua3RiZGV5Y2Rva2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NDE1NTksImV4cCI6MjA4NTUxNzU1OX0.6PCMO2QQvCn6bv9MKHH-vV6y8CNXaN-BRRft5ZaGeZwit";
+const supabaseAnonKey = getEnvVar('VITE_SUPABASE_ANON_KEY') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpocXhkeXJua3RiZGV5Y2Rva2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk5NDE1NTksImV4cCI6MjA4NTUxNzU1OX0.6PCMO2QQvCn6bv9MKHH-vV6y8CNXaN-BRRft5ZaGeZw";
 
 // Standardize URL (remove trailing slash if present)
 if (supabaseUrl && supabaseUrl.endsWith('/')) {
